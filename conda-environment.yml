@@ -39,7 +39,6 @@ dependencies:
   - torchmetrics
   - timm
   - torchinfo
-  - torchsummary
   - captum
   - optuna
 
@@ -56,4 +55,5 @@ dependencies:
 
   - pip:
       - label-studio-ml
+      - torchsummary
       - debugpy
