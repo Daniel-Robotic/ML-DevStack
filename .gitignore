@@ -1,0 +1,7 @@
+s3_credentials.json
+
+pg-data
+minio-data
+shared-venv
+labelstudio-data
+jupyter-notebook

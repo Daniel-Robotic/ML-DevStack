@@ -1,0 +1,46 @@
+FROM nvidia/cuda:12.9.1-devel-ubuntu24.04
+
+ENV CONDA_DIR=/opt/conda
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget bzip2 curl git ca-certificates libglib2.0-0 libxext6 libsm6 libxrender1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    bash ~/miniconda.sh -b -p $CONDA_DIR && \
+    rm ~/miniconda.sh && \
+    conda clean -afy && \
+    rm -rf ~/.cache
+
+COPY ./conda-environment.yml /tmp/environment.yml
+RUN conda env create -f /tmp/environment.yml && conda clean -afy
+
+ENV CONDA_DEFAULT_ENV=remote_jupyter_env
+ENV PATH=/opt/conda/envs/remote_jupyter_env/bin:$PATH
+
+WORKDIR /home/jupyter/notebooks
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 8888
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+# FROM continuumio/miniconda3
+
+# COPY ./conda-environment.yml /tmp/environment.yml
+# RUN conda env create -f /tmp/environment.yml && conda clean -afy
+
+# ENV CONDA_DEFAULT_ENV=remote_jupyter_env
+# ENV PATH=/opt/conda/envs/remote_jupyter_env/bin:$PATH
+
+# WORKDIR /home/jupyter/notebooks
+
+# COPY entrypoint.sh /entrypoint.sh
+# RUN chmod +x /entrypoint.sh
+
+# EXPOSE 8888
+
+# ENTRYPOINT ["/entrypoint.sh"]

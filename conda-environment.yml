@@ -1,0 +1,66 @@
+name: remote_jupyter_env
+channels:
+  - nvidia
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.12
+  - jupyter
+  - notebook
+  - jupyterlab
+  - ipykernel
+  - ipywidgets
+  - jupyterlab_widgets
+  - widgetsnbextension
+
+  # Core ML
+  - numpy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - plotly
+  - openpyxl
+  - pyarrow
+  - xgboost
+  - catboost
+  - lightgbm
+
+  # PyTorch + CUDA
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=12.1  # <--- Укажи нужную версию CUDA
+
+  # TensorFlow GPU
+  - tensorflow
+
+  # PyTorch ecosystem
+  - pip
+  - pip:
+      - pytorch-lightning
+      - torchmetrics
+      - timm
+      - torchinfo
+      - torchsummary
+      - captum
+      - optuna
+
+      # Monitoring and experiment tracking
+      - mlflow
+      - wandb
+      - tensorboard
+
+      # Label Studio ML backend
+      - label-studio-ml
+
+      # Development
+      - debugpy
+      - pandas-profiling
+      - scikit-optimize
+      - seaborn-image
+
+      # Optional: YOLOv5/8 interface
+      - ultralytics
