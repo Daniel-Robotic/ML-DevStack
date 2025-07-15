@@ -32,35 +32,28 @@ dependencies:
   - pytorch
   - torchvision
   - torchaudio
-  - pytorch-cuda=12.1  # <--- Укажи нужную версию CUDA
-
-  # TensorFlow GPU
-  - tensorflow
+  - pytorch-cuda=12.4  # <--- Укажи нужную версию CUDA
 
   # PyTorch ecosystem
-  - pip
+  - pytorch-lightning
+  - torchmetrics
+  - timm
+  - torchinfo
+  - torchsummary
+  - captum
+  - optuna
+
+  # Monitoring and experiment tracking
+  - mlflow
+  - wandb
+  - tensorboard
+
+  # Development
+  - pandas-profiling
+  - scikit-optimize
+  - seaborn-image
+  - ultralytics
+
   - pip:
-      - pytorch-lightning
-      - torchmetrics
-      - timm
-      - torchinfo
-      - torchsummary
-      - captum
-      - optuna
-
-      # Monitoring and experiment tracking
-      - mlflow
-      - wandb
-      - tensorboard
-
-      # Label Studio ML backend
       - label-studio-ml
-
-      # Development
       - debugpy
-      - pandas-profiling
-      - scikit-optimize
-      - seaborn-image
-
-      # Optional: YOLOv5/8 interface
-      - ultralytics

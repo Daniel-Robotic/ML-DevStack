@@ -67,21 +67,27 @@ services:
       - minio
       - postgres
 
-  # jupyter:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.jupyter
-  #   container_name: jupyter
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./jupyter-notebooks:/home/jupyter/notebooks
-  #   ports:
-  #     - "8888:8888"
-  #   networks:
-  #     mlnetwork:
-  #       ipv4_address: 172.10.1.5
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    container_name: jupyter
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./jupyter-notebooks:/home/jupyter/notebooks
+    ports:
+      - "8888:8888"
+    networks:
+      mlnetwork:
+        ipv4_address: 172.10.1.5
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
 
   mlflow:
     build:
@@ -105,16 +111,6 @@ services:
       --host 0.0.0.0
       --serve-artifacts
       --artifacts-destination s3://${MLFLOW_BUCKET_NAME}/artifacts
-  
-  pritunl:
-    image: jippi/pritunl
-    container_name: pritunl
-    restart: unless-stopped
-    privileged: true
-    network_mode: host
-    volumes:
-      - ./pritunl/etc:/etc/pritunl
-      - ./pritunl/lib:/var/lib/pritunl
 
 networks:
   mlnetwork:
