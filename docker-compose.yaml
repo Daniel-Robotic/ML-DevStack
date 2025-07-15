@@ -67,21 +67,21 @@ services:
       - minio
       - postgres
 
-  jupyter:
-    build:
-      context: .
-      dockerfile: Dockerfile.jupyter
-    container_name: jupyter
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - ./jupyter-notebooks:/home/jupyter/notebooks
-    ports:
-      - "8888:8888"
-    networks:
-      mlnetwork:
-        ipv4_address: 172.10.1.5
+  # jupyter:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.jupyter
+  #   container_name: jupyter
+  #   restart: unless-stopped
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./jupyter-notebooks:/home/jupyter/notebooks
+  #   ports:
+  #     - "8888:8888"
+  #   networks:
+  #     mlnetwork:
+  #       ipv4_address: 172.10.1.5
 
   mlflow:
     build:
