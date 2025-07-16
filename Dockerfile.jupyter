@@ -27,20 +27,3 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 8888
 
 ENTRYPOINT ["/entrypoint.sh"]
-
-# FROM continuumio/miniconda3
-
-# COPY ./conda-environment.yml /tmp/environment.yml
-# RUN conda env create -f /tmp/environment.yml && conda clean -afy
-
-# ENV CONDA_DEFAULT_ENV=remote_jupyter_env
-# ENV PATH=/opt/conda/envs/remote_jupyter_env/bin:$PATH
-
-# WORKDIR /home/jupyter/notebooks
-
-# COPY entrypoint.sh /entrypoint.sh
-# RUN chmod +x /entrypoint.sh
-
-# EXPOSE 8888
-
-# ENTRYPOINT ["/entrypoint.sh"]
