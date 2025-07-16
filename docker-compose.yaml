@@ -108,7 +108,9 @@ services:
 
   mlflow_server:
     restart: always
-    build: Dockerfile.mlflow
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow 
     image: mlflow_server
     container_name: mlflow_server
     depends_on:
