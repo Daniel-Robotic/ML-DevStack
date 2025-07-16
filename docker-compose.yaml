@@ -1,64 +1,70 @@
 services:
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-    container_name: minio
-    restart: unless-stopped
-    env_file:
-      - .env
-    networks:
-      mlnetwork:
-        ipv4_address: 172.10.1.2
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - ./minio-data:/data
-    command: server /data --console-address ":9001"
-
-  minio_setup:
-    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
-    container_name: minio_setup
-    env_file:
-      - .env
-    depends_on:
-      - minio
-    networks:
-      mlnetwork:
-        ipv4_address: 172.10.1.7
-    entrypoint: ["/bin/sh", "-c"]
-    command: |
-      echo "⏳ Waiting for MinIO..."
-      until mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do
-        echo "⏳ Retrying MinIO connection..."
-        sleep 3
-      done
-
-      echo "✅ Connected to MinIO"
-      mc mb myminio/${MLFLOW_BUCKET_NAME} || echo "Bucket exists"
-      mc cp /dev/null myminio/${MLFLOW_BUCKET_NAME}/artifacts/.keep || echo "Created artifacts/"
-
-      mc mb myminio/test-bucket || echo "Bucket exists"
-
-      # optional: only works in enterprise
-      mc admin user svcacct add \
-        --access-key ${MLFLOW_AWS_ACCESS_KEY_ID} \
-        --secret-key ${MLFLOW_AWS_SECRET_ACCESS_KEY} \
-        myminio ${MINIO_ROOT_USER} || echo "svcacct skipped"
-
-  postgres:
-    image: postgres:13-alpine
+  db:
+    restart: always
+    image: postgres
     container_name: ml_db
-    restart: unless-stopped
-    env_file:
-      - .env
-    networks:
-      mlnetwork:
-        ipv4_address: 172.10.1.3
     ports:
-      - "5432:5432"
+      - "5423:5432"
+    networks:
+      - backend
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DATABASE: ${PG_DATABASE}
     volumes:
       - ./postgres-init:/docker-entrypoint-initdb.d
       - ./pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-p", "5432", "-U", "${PG_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    env_file:
+      - .env
+  
+  s3:
+    restart: always
+    image: minio/minio:RELEASE.2024-07-31T05-46-26Z
+    container_name: mlflow_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - frontend
+      - backend
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ':9001' --address ':9000'
+    volumes:
+      - ./minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  s3_setup:
+    image: minio/mc:RELEASE.2024-08-13T05-33-17Z
+    container_name: s3_setup
+    depends_on:
+      - s3
+    networks:
+      - backend
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    entrypoint: ["/bin/sh", "-c"]
+    command: 
+      - |
+        mc alias set myminio http://s3:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+        mc admin user svcacct add --access-key ${MLFLOW_AWS_ACCESS_KEY_ID} --secret-key ${MLFLOW_AWS_SECRET_ACCESS_KEY} myminio ${MINIO_ROOT_USER}
+        mc mb myminio/${MLFLOW_BUCKET_NAME}/artifacts
+        mc mb myminio/test-bucket
 
   label_studio:
     stdin_open: true
@@ -69,44 +75,51 @@ services:
     env_file:
       - .env
     networks:
-      mlnetwork:
-        ipv4_address: 172.10.1.4
+      - frontend
+      - backend
     ports:
       - "8080:8080"
     volumes:
       - ./labelstudio-data:/label-studio/data
     depends_on:
-      - minio
-      - postgres
+      - s3_setup
+      - db
 
-  jupyter:
-    build:
-      context: .
-      dockerfile: Dockerfile.jupyter
-    container_name: jupyter
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - ./jupyter-notebooks:/home/jupyter/notebooks
+  # jupyter:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.jupyter
+  #   container_name: jupyter
+  #   restart: unless-stopped
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./jupyter-notebooks:/home/jupyter/notebooks
+  #   ports:
+  #     - "8888:8888"
+  #   networks:
+  #     mlnetwork:
+  #       ipv4_address: 172.10.1.5
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - capabilities: [gpu]
+  #   runtime: nvidia
+
+  mlflow_server:
+    restart: always
+    build: ./server
+    image: mlflow_server
+    container_name: mlflow_server
+    depends_on:
+      - db
+      - s3_setup
     ports:
-      - "8888:8888"
+      - "5050:5000"
     networks:
-      mlnetwork:
-        ipv4_address: 172.10.1.5
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
-    runtime: nvidia
-
-  mlflow:
-    build:
-      context: .
-      dockerfile: Dockerfile.mlflow
-    container_name: mlflow
-    restart: unless-stopped
+      - frontend
+      - backend
     env_file:
       - .env
     environment:
@@ -114,25 +127,20 @@ services:
       AWS_SECRET_ACCESS_KEY: ${MLFLOW_AWS_SECRET_ACCESS_KEY}
       MLFLOW_S3_ENDPOINT_URL: http://s3:9000
       MLFLOW_S3_IGNORE_TLS: "True"
-    ports:
-      - "5050:5000"
-    networks:
-      mlnetwork:
-        ipv4_address: 172.10.1.6
-    depends_on:
-      - minio
-      - postgres
     command: >
       mlflow server
-      --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@ml_db:5432/${MLFLOW_DATABASE}
+      --backend-store-uri postgresql://${PG_USER}:${PG_PASSWORD}@db:5432/${PG_DATABASE}
       --host 0.0.0.0
       --serve-artifacts
       --artifacts-destination s3://${MLFLOW_BUCKET_NAME}/artifacts
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
-  mlnetwork:
+  frontend:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.10.1.0/24
-          gateway: 172.10.1.1
+  backend:
+    driver: bridge
