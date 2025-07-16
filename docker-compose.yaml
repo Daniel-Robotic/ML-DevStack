@@ -112,8 +112,8 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ${MLFLOW_AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${MLFLOW_AWS_SECRET_ACCESS_KEY}
-      MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL}
-      AWS_REGION: us-east-1
+      MLFLOW_S3_ENDPOINT_URL: http://s3:9000
+      MLFLOW_S3_IGNORE_TLS: "True"
     ports:
       - "5050:5000"
     networks:
