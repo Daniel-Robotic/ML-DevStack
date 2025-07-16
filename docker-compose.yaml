@@ -26,12 +26,24 @@ services:
       mlnetwork:
         ipv4_address: 172.10.1.7
     entrypoint: ["/bin/sh", "-c"]
-    command: 
-      - |
-        mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
-        mc admin user svcacct add --access-key ${MLFLOW_AWS_ACCESS_KEY_ID} --secret-key ${MLFLOW_AWS_SECRET_ACCESS_KEY} myminio ${MINIO_ROOT_USER}
-        mc mb myminio/${MLFLOW_BUCKET_NAME}/artifacts
-        mc mb myminio/test-bucket
+    command: |
+      echo "⏳ Waiting for MinIO..."
+      until mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do
+        echo "⏳ Retrying MinIO connection..."
+        sleep 3
+      done
+
+      echo "✅ Connected to MinIO"
+      mc mb myminio/${MLFLOW_BUCKET_NAME} || echo "Bucket exists"
+      mc cp /dev/null myminio/${MLFLOW_BUCKET_NAME}/artifacts/.keep || echo "Created artifacts/"
+
+      mc mb myminio/test-bucket || echo "Bucket exists"
+
+      # optional: only works in enterprise
+      mc admin user svcacct add \
+        --access-key ${MLFLOW_AWS_ACCESS_KEY_ID} \
+        --secret-key ${MLFLOW_AWS_SECRET_ACCESS_KEY} \
+        myminio ${MINIO_ROOT_USER} || echo "svcacct skipped"
 
   postgres:
     image: postgres:13-alpine
@@ -97,6 +109,11 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      AWS_ACCESS_KEY_ID: ${MLFLOW_AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${MLFLOW_AWS_SECRET_ACCESS_KEY}
+      MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL}
+      AWS_REGION: us-east-1
     ports:
       - "5050:5000"
     networks:
