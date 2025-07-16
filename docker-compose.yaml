@@ -76,6 +76,8 @@ services:
     networks:
       - frontend
       - backend
+    ports:
+      - "8080:8080"
     volumes:
       - ./labelstudio-data:/label-studio/data
     depends_on:
