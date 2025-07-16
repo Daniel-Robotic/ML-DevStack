@@ -56,4 +56,5 @@ dependencies:
   - pip:
       - label-studio-ml
       - torchsummary
+      - boto3
       - debugpy
