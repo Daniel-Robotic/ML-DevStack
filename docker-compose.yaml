@@ -8,14 +8,13 @@ services:
     networks:
       - backend
     environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DATABASE: ${PG_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./postgres-init:/docker-entrypoint-initdb.d
       - ./pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-p", "5432", "-U", "${PG_USER}"]
+      test: ["CMD", "pg_isready", "-p", "5432", "-U", "${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -129,7 +128,7 @@ services:
       MLFLOW_S3_IGNORE_TLS: "True"
     command: >
       mlflow server
-      --backend-store-uri postgresql://${PG_USER}:${PG_PASSWORD}@db:5432/${PG_DATABASE}
+      --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/mlflow
       --host 0.0.0.0
       --serve-artifacts
       --artifacts-destination s3://${MLFLOW_BUCKET_NAME}/artifacts
