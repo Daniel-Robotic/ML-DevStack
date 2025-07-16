@@ -1,5 +1,5 @@
 
-# 🧠 ML DevStack: Jupyter + MLflow + MinIO + Label Studio + PostgreSQL
+# 🧠 ML DevStack
 
 Среда разработки для машинного обучения, включающая:
 

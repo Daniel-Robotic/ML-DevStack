@@ -137,6 +137,41 @@ services:
       timeout: 10s
       retries: 3
 
+  headscale:
+    image: headscale/headscale:latest
+    restart: unless-stopped
+    container_name: headscale
+    networks:
+      - frontend
+      - backend
+    ports:
+      - 0.0.0.0:8088:8080
+      - 0.0.0.0:9099:9090
+    volumes:
+      - /etc/headscale:/etc/headscale
+    command: serve
+  headplane:
+    container_name: headplane
+    image: ghcr.io/tale/headplane:0.3.9
+    restart: unless-stopped
+    volumes:
+      - ./data:/var/lib/headscale
+      - /etc/headscale:/etc/headscale
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - frontend
+      - backend
+    ports:
+      - 3000:3000
+    environment:
+      HEADSCALE_URL: http://0.0.0.0:8088
+      HEADSCALE_INTEGRATION: docker
+      HEADSCALE_CONTAINER: headscale
+      DISABLE_API_KEY_LOGIN: "true"
+      HOST: 0.0.0.0
+      PORT: "3000"
+      ROOT_API_KEY: 123abcdefghijklmnopqrstuvwxyz
+
 networks:
   frontend:
     driver: bridge
