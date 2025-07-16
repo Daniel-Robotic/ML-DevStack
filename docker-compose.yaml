@@ -84,24 +84,24 @@ services:
       - s3_setup
       - db
 
-    jupyter:
-      build:
-        context: .
-        dockerfile: Dockerfile.jupyter
-      container_name: jupyter
-      restart: unless-stopped
-      env_file:
-        - .env
-      volumes:
-        - ./jupyter-notebooks:/home/jupyter/notebooks
-      ports:
-        - "8888:8888"
-      networks:
-        - frontend
-        - backend
-      environment:
-        - NVIDIA_VISIBLE_DEVICES=all
-      runtime: nvidia
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    container_name: jupyter
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./jupyter-notebooks:/home/jupyter/notebooks
+    ports:
+      - "8888:8888"
+    networks:
+      - frontend
+      - backend
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    runtime: nvidia
 
   mlflow_server:
     restart: always
