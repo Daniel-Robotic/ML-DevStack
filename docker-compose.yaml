@@ -63,7 +63,7 @@ services:
         mc alias set myminio http://s3:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
         mc admin user svcacct add --access-key ${MLFLOW_AWS_ACCESS_KEY_ID} --secret-key ${MLFLOW_AWS_SECRET_ACCESS_KEY} myminio ${MINIO_ROOT_USER}
         mc mb myminio/${MLFLOW_BUCKET_NAME}/artifacts
-        mc mb myminio/test-bucket
+        mc mb myminio/labels-data/
 
   label_studio:
     stdin_open: true
@@ -84,27 +84,24 @@ services:
       - s3_setup
       - db
 
-  # jupyter:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.jupyter
-  #   container_name: jupyter
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./jupyter-notebooks:/home/jupyter/notebooks
-  #   ports:
-  #     - "8888:8888"
-  #   networks:
-  #     mlnetwork:
-  #       ipv4_address: 172.10.1.5
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - capabilities: [gpu]
-  #   runtime: nvidia
+    jupyter:
+      build:
+        context: .
+        dockerfile: Dockerfile.jupyter
+      container_name: jupyter
+      restart: unless-stopped
+      env_file:
+        - .env
+      volumes:
+        - ./jupyter-notebooks:/home/jupyter/notebooks
+      ports:
+        - "8888:8888"
+      networks:
+        - frontend
+        - backend
+      environment:
+        - NVIDIA_VISIBLE_DEVICES=all
+      runtime: nvidia
 
   mlflow_server:
     restart: always
