@@ -90,6 +90,7 @@ services:
       dockerfile: Dockerfile.jupyter
     container_name: jupyter
     restart: unless-stopped
+    shm_size: '6g'
     env_file:
       - .env
     volumes:
@@ -118,6 +119,8 @@ services:
     networks:
       - frontend
       - backend
+    volumes:
+      - mlflow-data:/mlflow
     env_file:
       - .env
     environment:

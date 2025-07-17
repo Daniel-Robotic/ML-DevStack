@@ -5,3 +5,4 @@ minio-data
 shared-venv
 labelstudio-data
 jupyter-notebook
+credentials.json
